@@ -10,62 +10,64 @@
   --brand:#1e3a8a; --brand2:#2563eb; --input:#eff6ff; --red:#dc2626; --green:#15803d;
 }
 * { box-sizing:border-box; }
-body { margin:0; background:var(--bg); color:var(--ink);
+body { margin:0; height:100vh; display:flex; flex-direction:column; background:var(--bg); color:var(--ink);
   font-family:-apple-system,BlinkMacSystemFont,"PingFang TC","Helvetica Neue",sans-serif; font-size:14px; }
 button { font-family:inherit; cursor:pointer; }
-.top { background:var(--brand); color:#fff; padding:14px 24px; display:flex; align-items:center; gap:16px; }
-.top h1 { font-size:19px; margin:0; font-weight:700; letter-spacing:1px; }
+.top { flex:none; background:var(--brand); color:#fff; padding:8px 20px; display:flex; align-items:center; gap:16px; }
+.top h1 { font-size:16px; margin:0; font-weight:700; letter-spacing:1px; }
 .sync { margin-left:auto; font-size:12.5px; opacity:.9; display:flex; align-items:center; gap:8px; }
 .sync.err { color:#fecaca; }
 .top .ghost { background:rgba(255,255,255,.15); color:#fff; border:0; border-radius:6px; padding:5px 10px; font-size:12.5px; }
-.wrap { padding:18px 24px 60px; }
+.wrap { flex:1; min-height:0; display:flex; flex-direction:column; padding:10px 20px 12px; }
+.wrap[hidden] { display:none; }
 
-.stats { display:grid; grid-template-columns:repeat(6,minmax(120px,1fr)); gap:12px; margin-bottom:16px; }
-.stat { background:var(--card); border-radius:10px; padding:12px 16px; border:1px solid var(--line); }
-.stat .k { font-size:12px; color:var(--mute); }
-.stat .v { font-size:26px; font-weight:700; margin-top:2px; }
-.stat input { width:100%; font-size:26px; font-weight:700; border:0; background:var(--input); border-radius:6px; padding:0 6px; margin-top:2px; font-family:inherit; color:var(--ink); }
+.stats { flex:none; display:grid; grid-template-columns:repeat(6,minmax(110px,1fr)); gap:8px; margin-bottom:8px; }
+.stat { background:var(--card); border-radius:8px; padding:5px 12px; border:1px solid var(--line); }
+.stat .k { font-size:11px; color:var(--mute); }
+.stat .v { font-size:20px; font-weight:700; line-height:1.25; }
+.stat input { width:100%; font-size:20px; font-weight:700; line-height:1.25; border:0; background:var(--input); border-radius:6px; padding:0 6px; font-family:inherit; color:var(--ink); }
 .neg { color:var(--red); }
 .hint { color:var(--mute); font-size:12.5px; margin:0 0 12px; }
 
-.tabs { display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin-bottom:12px; }
-.tab { border:1px solid var(--line); background:#fff; border-radius:8px 8px 0 0; padding:8px 16px; font-size:14px; color:var(--mute); }
+.tabs { flex:none; display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin-bottom:8px; }
+.tab { border:1px solid var(--line); background:#fff; border-radius:8px; padding:4px 14px; font-size:13px; color:var(--mute); }
 .tab.on { background:var(--brand2); color:#fff; border-color:var(--brand2); font-weight:600; }
 .tab.add { border-style:dashed; border-radius:8px; }
 
-.bar { display:flex; gap:8px; align-items:center; margin-bottom:10px; flex-wrap:wrap; }
-.bar input[type=search] { border:1px solid var(--line); border-radius:8px; padding:7px 12px; width:220px; font-family:inherit; font-size:14px; }
-.btn { border:1px solid var(--line); background:#fff; border-radius:8px; padding:7px 13px; font-size:13.5px; }
+.bar { flex:none; display:flex; gap:6px; align-items:center; margin-bottom:8px; flex-wrap:wrap; }
+.info { color:var(--mute); cursor:help; font-size:13px; padding:0 4px; }
+.bar input[type=search] { border:1px solid var(--line); border-radius:8px; padding:5px 10px; width:200px; font-family:inherit; font-size:14px; }
+.btn { border:1px solid var(--line); background:#fff; border-radius:8px; padding:5px 11px; font-size:13px; }
 .btn:hover { background:#f9fafb; }
 .btn.pri { background:var(--brand2); color:#fff; border-color:var(--brand2); }
 .btn.pri:hover { background:#1d4ed8; }
 .btn.danger { color:var(--red); }
 .sp { flex:1; }
 
-.tablewrap { background:#fff; border:1px solid var(--line); border-radius:10px; overflow:auto; max-height:calc(100vh - 330px); min-height:200px; }
+.tablewrap { background:#fff; border:1px solid var(--line); border-radius:10px; overflow:auto; flex:1; min-height:0; }
 table { border-collapse:separate; border-spacing:0; width:max-content; min-width:100%; }
 th, td { border-bottom:1px solid var(--line); border-right:1px solid #f1f5f9; padding:0; text-align:center; white-space:nowrap; }
-thead th { position:sticky; top:0; background:var(--brand); color:#fff; font-weight:600; padding:9px 6px; z-index:2; }
+thead th { position:sticky; top:0; background:var(--brand); color:#fff; font-weight:600; padding:6px 6px; z-index:2; }
 th.cust, td.cust { position:sticky; left:0; z-index:1; background:#fff; }
 thead th.cust { z-index:3; background:var(--brand); }
 tbody tr:hover td { background:#f8fafc; }
 tbody tr:hover td.cust { background:#f8fafc; }
-td input { border:0; background:transparent; width:100%; padding:8px 6px; font-family:inherit; font-size:14px; text-align:center; color:var(--ink); }
+td input { border:0; background:transparent; width:100%; padding:5px 6px; font-family:inherit; font-size:14px; text-align:center; color:var(--ink); }
 td.edit input { background:var(--input); }
 td input:focus { outline:2px solid var(--brand2); outline-offset:-2px; background:#fff; }
 td.cust input { text-align:left; width:130px; font-weight:600; padding-left:12px; }
 td.q input { width:64px; }
 td.d input { width:128px; }
-td.calc { padding:8px 12px; font-weight:600; min-width:70px; }
+td.calc { padding:5px 12px; font-weight:600; min-width:70px; }
 td.ok { color:var(--green); font-weight:700; width:44px; }
 td.del { width:38px; }
-td.del button { border:0; background:none; color:#9ca3af; font-size:16px; padding:6px 10px; }
+td.del button { border:0; background:none; color:#9ca3af; font-size:15px; padding:3px 10px; }
 td.del button:hover { color:var(--red); }
 input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; }
 input[type=number] { -moz-appearance:textfield; }
 tr.done td { color:#9ca3af; }
 tr.hide { display:none; }
-tfoot td { position:sticky; bottom:0; background:#f8fafc; font-weight:700; padding:9px 12px; border-top:2px solid var(--line); }
+tfoot td { position:sticky; bottom:0; background:#f8fafc; font-weight:700; padding:6px 12px; border-top:2px solid var(--line); }
 tfoot td.cust { z-index:3; }
 
 .overlay { position:fixed; inset:0; background:var(--brand); display:flex; align-items:center; justify-content:center; z-index:50; }
@@ -100,9 +102,9 @@ tfoot td.cust { z-index:3; }
 <div class="wrap" id="app" hidden>
   <div class="tabs" id="tabs"></div>
   <div class="stats" id="stats"></div>
-  <p class="hint">藍色欄位由您填寫；每次取貨在下一組日期及數量登記。實際庫存＝進貨數量－已取貨；可再接訂＝進貨數量－訂單總數。負數代表超取或庫存不足。多人同時使用時資料每 10 秒自動同步。</p>
   <div class="bar">
     <input type="search" id="search" placeholder="搜尋客戶…">
+    <span class="info" title="藍色欄位由您填寫；每次取貨在下一組日期及數量登記。實際庫存＝進貨數量－已取貨；可再接訂＝進貨數量－訂單總數。負數代表超取或庫存不足。多人同時使用時資料每 10 秒自動同步。">ⓘ 說明</span>
     <button class="btn pri" id="btnAddRow">＋ 新增訂單</button>
     <button class="btn" id="btnAddPick">＋ 新增一次取貨欄</button>
     <span class="sp"></span>
