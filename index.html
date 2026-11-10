@@ -93,6 +93,7 @@ tfoot td.cust { z-index:3; }
   <h1>客戶預購管理</h1>
   <div class="sync" id="sync">載入中…</div>
   <button class="ghost" id="btnRefresh">立即同步</button>
+  <button class="ghost" id="btnPw">修改密碼</button>
   <button class="ghost" id="btnLogout">登出</button>
 </div>
 
@@ -132,7 +133,7 @@ let products = [];          // [{name, stock, rows:[]}]
 let active = '';            // 目前商品名稱
 let showPick = {};          // 各商品顯示幾組取貨欄
 let pending = {};           // name → {rows:Set, del:Set, stock:bool}
-let saving = false, saveTimer = null, lastSync = null, loaded = false;
+let saving = false, saveTimer = null, lastSync = null, loaded = false, lastEdit = 0;
 
 /* ---------- API ---------- */
 async function api(body) {
@@ -163,6 +164,16 @@ function logout(msg) {
   $('#loginMsg').textContent = msg || ''; $('#pw').value = '';
 }
 $('#btnLogout').onclick = () => logout();
+$('#btnPw').onclick = async () => {
+  const a = prompt('請輸入新密碼（至少 4 個字元）：'); if (a === null) return;
+  if (a.length < 4) return alert('密碼至少 4 個字元');
+  if (prompt('請再輸入一次新密碼：') !== a) return alert('兩次輸入不一致，未修改');
+  try {
+    await api({action:'changePassword', newPassword:a});
+    key = a; localStorage.setItem('po_key', a);
+    alert('密碼已修改。其他人下次開啟時需要改用新密碼登入。');
+  } catch (err) { alert('修改失敗：' + err.message); }
+};
 
 /* ---------- 載入 / 同步 ---------- */
 async function load(first) {
@@ -187,8 +198,7 @@ function applyServer(list) {
 function busy() {
   if (saving || saveTimer) return true;
   if (Object.values(pending).some(p => p.rows.size || p.del.size || p.stock)) return true;
-  const a = document.activeElement;
-  return !!(a && a.tagName === 'INPUT' && a.closest('#tbl, .stat'));
+  return Date.now() - lastEdit < 4000; // 剛輸入完 4 秒內先不刷新，其餘時間（包含游標停在格子裡）照常同步
 }
 async function poll(force) {
   if (!loaded || (!force && busy())) return;
@@ -201,16 +211,17 @@ async function poll(force) {
 }
 setInterval(() => poll(), POLL_MS);
 window.addEventListener('focus', () => poll());
+document.addEventListener('visibilitychange', () => { if (!document.hidden) poll(); });
 $('#btnRefresh').onclick = () => poll(true);
 
 function setSync(msg, err) {
   const el = $('#sync'); el.classList.toggle('err', !!err);
-  el.textContent = msg || ('已同步 ' + lastSync.toLocaleTimeString('zh-TW', {hour12:false}));
+  el.textContent = msg || ('已同步 ' + lastSync.toLocaleTimeString('zh-TW', {hour12:false}) + '（每 10 秒自動更新）');
 }
 
 /* ---------- 儲存（逐列合併，多人不互相覆蓋） ---------- */
 const P = name => (pending[name] ||= {rows:new Set(), del:new Set(), stock:false});
-function queueSave() { setSync('編輯中…'); clearTimeout(saveTimer); saveTimer = setTimeout(() => { saveTimer = null; flush(); }, SAVE_DELAY); }
+function queueSave() { lastEdit = Date.now(); setSync('編輯中…'); clearTimeout(saveTimer); saveTimer = setTimeout(() => { saveTimer = null; flush(); }, SAVE_DELAY); }
 async function flush() {
   if (saving) { queueSave(); return; }
   saving = true; setSync('儲存中…');
@@ -246,6 +257,20 @@ const fmt = n => `<span class="${n < 0 ? 'neg' : ''}">${n}</span>`;
 
 /* ---------- 畫面 ---------- */
 function render() {
+  // 重畫前記住游標位置，重畫後還原，這樣背景同步時不會打斷正在輸入的人
+  const ae = document.activeElement; let keep = null;
+  if (ae && ae.tagName === 'INPUT') {
+    const tr = ae.closest('tr[data-id]');
+    keep = {stock: ae.id === 'stockIn', id: tr && tr.dataset.id, f: ae.dataset.f, i: ae.dataset.i, s: null, e: null};
+    try { keep.s = ae.selectionStart; keep.e = ae.selectionEnd; } catch (_) {}
+  }
+  renderInner();
+  if (keep) {
+    let el = keep.stock ? $('#stockIn') : keep.id && $(`tr[data-id="${keep.id}"] input[data-f="${keep.f}"]${keep.i != null ? `[data-i="${keep.i}"]` : ''}`);
+    if (el) { el.focus(); try { if (keep.s != null) el.setSelectionRange(keep.s, keep.e); } catch (_) {} }
+  }
+}
+function renderInner() {
   const p = cur();
   $('#tabs').innerHTML = products.map(x => `<button class="tab ${x.name === active ? 'on' : ''}" data-name="${esc(x.name)}">${esc(x.name)}</button>`).join('') + '<button class="tab add" id="btnAddProd">＋ 新增商品</button>';
   if (!p) { $('#stats').innerHTML = ''; $('#tbl').innerHTML = ''; return; }
