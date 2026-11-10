@@ -345,7 +345,9 @@ $('#tabs').addEventListener('click', async e => {
   if (e.target.id === 'btnAddProd') {
     const name = (prompt('新商品名稱：') || '').trim(); if (!name) return;
     if (products.some(p => p.name === name)) return alert('已有同名商品');
-    try { setSync('建立中…'); await api({action:'createProduct', name, stock:0, rows:[]}); active = name; await poll(true); }
+    // 沿用目前商品的客戶名單（只帶客戶名稱，訂單與取貨數量留空）
+    const src = cur(), rows = src ? src.rows.filter(r => r.customer.trim()).map(r => newRow(r.customer)) : [];
+    try { setSync('建立中…'); await api({action:'createProduct', name, stock:0, rows}); active = name; await poll(true); }
     catch (err) { alert('建立失敗：' + err.message); setSync(); }
   }
 });
