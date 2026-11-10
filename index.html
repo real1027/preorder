@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>客戶預購管理</title>
+<style>
+:root {
+  --bg:#f3f5f9; --card:#fff; --ink:#1f2937; --mute:#6b7280; --line:#e5e7eb;
+  --brand:#1e3a8a; --brand2:#2563eb; --input:#eff6ff; --red:#dc2626; --green:#15803d;
+}
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang TC","Helvetica Neue",sans-serif; font-size:14px; }
+button { font-family:inherit; cursor:pointer; }
+.top { background:var(--brand); color:#fff; padding:14px 24px; display:flex; align-items:center; gap:16px; }
+.top h1 { font-size:19px; margin:0; font-weight:700; letter-spacing:1px; }
+.sync { margin-left:auto; font-size:12.5px; opacity:.9; display:flex; align-items:center; gap:8px; }
+.sync.err { color:#fecaca; }
+.top .ghost { background:rgba(255,255,255,.15); color:#fff; border:0; border-radius:6px; padding:5px 10px; font-size:12.5px; }
+.wrap { padding:18px 24px 60px; }
+
+.stats { display:grid; grid-template-columns:repeat(6,minmax(120px,1fr)); gap:12px; margin-bottom:16px; }
+.stat { background:var(--card); border-radius:10px; padding:12px 16px; border:1px solid var(--line); }
+.stat .k { font-size:12px; color:var(--mute); }
+.stat .v { font-size:26px; font-weight:700; margin-top:2px; }
+.stat input { width:100%; font-size:26px; font-weight:700; border:0; background:var(--input); border-radius:6px; padding:0 6px; margin-top:2px; font-family:inherit; color:var(--ink); }
+.neg { color:var(--red); }
+.hint { color:var(--mute); font-size:12.5px; margin:0 0 12px; }
+
+.tabs { display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin-bottom:12px; }
+.tab { border:1px solid var(--line); background:#fff; border-radius:8px 8px 0 0; padding:8px 16px; font-size:14px; color:var(--mute); }
+.tab.on { background:var(--brand2); color:#fff; border-color:var(--brand2); font-weight:600; }
+.tab.add { border-style:dashed; border-radius:8px; }
+
+.bar { display:flex; gap:8px; align-items:center; margin-bottom:10px; flex-wrap:wrap; }
+.bar input[type=search] { border:1px solid var(--line); border-radius:8px; padding:7px 12px; width:220px; font-family:inherit; font-size:14px; }
+.btn { border:1px solid var(--line); background:#fff; border-radius:8px; padding:7px 13px; font-size:13.5px; }
+.btn:hover { background:#f9fafb; }
+.btn.pri { background:var(--brand2); color:#fff; border-color:var(--brand2); }
+.btn.pri:hover { background:#1d4ed8; }
+.btn.danger { color:var(--red); }
+.sp { flex:1; }
+
+.tablewrap { background:#fff; border:1px solid var(--line); border-radius:10px; overflow:auto; max-height:calc(100vh - 330px); min-height:200px; }
+table { border-collapse:separate; border-spacing:0; width:max-content; min-width:100%; }
+th, td { border-bottom:1px solid var(--line); border-right:1px solid #f1f5f9; padding:0; text-align:center; white-space:nowrap; }
+thead th { position:sticky; top:0; background:var(--brand); color:#fff; font-weight:600; padding:9px 6px; z-index:2; }
+th.cust, td.cust { position:sticky; left:0; z-index:1; background:#fff; }
+thead th.cust { z-index:3; background:var(--brand); }
+tbody tr:hover td { background:#f8fafc; }
+tbody tr:hover td.cust { background:#f8fafc; }
+td input { border:0; background:transparent; width:100%; padding:8px 6px; font-family:inherit; font-size:14px; text-align:center; color:var(--ink); }
+td.edit input { background:var(--input); }
+td input:focus { outline:2px solid var(--brand2); outline-offset:-2px; background:#fff; }
+td.cust input { text-align:left; width:130px; font-weight:600; padding-left:12px; }
+td.q input { width:64px; }
+td.d input { width:128px; }
+td.calc { padding:8px 12px; font-weight:600; min-width:70px; }
+td.ok { color:var(--green); font-weight:700; width:44px; }
+td.del { width:38px; }
+td.del button { border:0; background:none; color:#9ca3af; font-size:16px; padding:6px 10px; }
+td.del button:hover { color:var(--red); }
+input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; }
+input[type=number] { -moz-appearance:textfield; }
+tr.done td { color:#9ca3af; }
+tr.hide { display:none; }
+tfoot td { position:sticky; bottom:0; background:#f8fafc; font-weight:700; padding:9px 12px; border-top:2px solid var(--line); }
+tfoot td.cust { z-index:3; }
+
+.overlay { position:fixed; inset:0; background:var(--brand); display:flex; align-items:center; justify-content:center; z-index:50; }
+.login { background:#fff; border-radius:14px; padding:32px 36px; width:340px; text-align:center; }
+.login h2 { margin:0 0 6px; } .login p { margin:0 0 18px; color:var(--mute); font-size:13px; }
+.login input { width:100%; padding:11px 14px; border:1px solid var(--line); border-radius:8px; font-size:16px; margin-bottom:12px; font-family:inherit; }
+.login .btn { width:100%; padding:11px; font-size:15px; }
+.login .msg { color:var(--red); font-size:13px; min-height:18px; margin-top:8px; }
+.hidden { display:none !important; }
+</style>
+</head>
+<body>
+
+<div id="login" class="overlay">
+  <form class="login" id="loginForm">
+    <h2>客戶預購管理</h2>
+    <p>請輸入登入密碼</p>
+    <input type="password" id="pw" placeholder="密碼" autofocus autocomplete="current-password">
+    <button class="btn pri" type="submit">登入</button>
+    <div class="msg" id="loginMsg"></div>
+  </form>
+</div>
+
+<div class="top">
+  <h1>客戶預購管理</h1>
+  <div class="sync" id="sync">載入中…</div>
+  <button class="ghost" id="btnRefresh">立即同步</button>
+  <button class="ghost" id="btnLogout">登出</button>
+</div>
+
+<div class="wrap" id="app" hidden>
+  <div class="tabs" id="tabs"></div>
+  <div class="stats" id="stats"></div>
+  <p class="hint">藍色欄位由您填寫；每次取貨在下一組日期及數量登記。實際庫存＝進貨數量－已取貨；可再接訂＝進貨數量－訂單總數。負數代表超取或庫存不足。多人同時使用時資料每 10 秒自動同步。</p>
+  <div class="bar">
+    <input type="search" id="search" placeholder="搜尋客戶…">
+    <button class="btn pri" id="btnAddRow">＋ 新增訂單</button>
+    <button class="btn" id="btnAddPick">＋ 新增一次取貨欄</button>
+    <span class="sp"></span>
+    <button class="btn" id="btnCsv">匯出 CSV</button>
+    <button class="btn" id="btnRename">重新命名商品</button>
+    <button class="btn danger" id="btnDelProd">刪除商品</button>
+  </div>
+  <div class="tablewrap"><table id="tbl"></table></div>
+</div>
+
+<script>
+/* ★ 部署 Apps Script 後，把網頁應用程式網址貼在這裡 ★ */
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx0Wbxy2706X_ddq3wLtdRshx-nYT2yL9Zm8_K6fRUMIUaZdJLRHZEVRSqxhZFm0jOz/exec';
+
+const MAX_PICK = 10, MIN_PICK = 7, POLL_MS = 10000, SAVE_DELAY = 700;
+const SEED_NAME = '12發燦爛', SEED_STOCK = 280;
+const SEED_CUSTOMERS = ['協利','牛角','阿耀','巨獎','阿中','先彩','金晉玉','阿炮','連發堂','廠長','焰火花語','振興','正華興','老溫','詹勳志','沅泰','黃馥馨','李俊彥','錦德堂','昇茹','陳丁源','阿哲','吳清沂','先彩','黃榮義','清芳堂','吳岳華'];
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const newId = () => Math.random().toString(36).slice(2, 6) + Date.now().toString(36).slice(-4);
+const num = v => (v === '' || v == null || isNaN(Number(v))) ? 0 : Number(v);
+const blankPicks = () => Array.from({length: MAX_PICK}, () => ({date:'', qty:''}));
+const newRow = (customer='') => ({id:newId(), customer, qty:'', pickups:blankPicks()});
+
+let key = localStorage.getItem('po_key') || '';
+let products = [];          // [{name, stock, rows:[]}]
+let active = '';            // 目前商品名稱
+let showPick = {};          // 各商品顯示幾組取貨欄
+let pending = {};           // name → {rows:Set, del:Set, stock:bool}
+let saving = false, saveTimer = null, lastSync = null, loaded = false;
+
+/* ---------- API ---------- */
+async function api(body) {
+  const res = await fetch(SCRIPT_URL, {method:'POST', headers:{'Content-Type':'text/plain'}, body:JSON.stringify({key, ...body})});
+  const d = await res.json();
+  if (d.error === 'unauthorized') { logout('密碼錯誤或已更換，請重新登入'); throw new Error('unauthorized'); }
+  if (d.error) throw new Error(d.error);
+  return d;
+}
+async function fetchAll() {
+  const res = await fetch(SCRIPT_URL + '?key=' + encodeURIComponent(key));
+  const d = await res.json();
+  if (d.error === 'unauthorized') { logout('密碼錯誤或已更換，請重新登入'); throw new Error('unauthorized'); }
+  if (d.error) throw new Error(d.error);
+  return d.products;
+}
+
+/* ---------- 登入 ---------- */
+$('#loginForm').onsubmit = async e => {
+  e.preventDefault();
+  key = $('#pw').value; $('#loginMsg').textContent = '驗證中…';
+  try { await load(true); localStorage.setItem('po_key', key); $('#loginMsg').textContent = ''; }
+  catch (err) { if (err.message !== 'unauthorized') $('#loginMsg').textContent = '連線失敗：' + err.message; }
+};
+function logout(msg) {
+  localStorage.removeItem('po_key'); key = ''; loaded = false;
+  $('#login').classList.remove('hidden'); $('#app').hidden = true;
+  $('#loginMsg').textContent = msg || ''; $('#pw').value = '';
+}
+$('#btnLogout').onclick = () => logout();
+
+/* ---------- 載入 / 同步 ---------- */
+async function load(first) {
+  if (SCRIPT_URL === 'YOUR_WEB_APP_URL') { setSync('尚未設定 SCRIPT_URL', true); throw new Error('尚未設定 SCRIPT_URL'); }
+  let list = await fetchAll();
+  if (!list.length) { // 第一次使用：建立範例商品
+    const rows = SEED_CUSTOMERS.map(c => newRow(c));
+    await api({action:'createProduct', name:SEED_NAME, stock:SEED_STOCK, rows});
+    list = await fetchAll();
+  }
+  applyServer(list);
+  loaded = true;
+  $('#login').classList.add('hidden'); $('#app').hidden = false;
+  lastSync = new Date(); setSync();
+}
+function applyServer(list) {
+  list.forEach(p => p.rows.forEach(r => { while (r.pickups.length < MAX_PICK) r.pickups.push({date:'',qty:''}); }));
+  products = list;
+  if (!products.find(p => p.name === active)) active = products[0]?.name || '';
+  render();
+}
+function busy() {
+  if (saving || saveTimer) return true;
+  if (Object.values(pending).some(p => p.rows.size || p.del.size || p.stock)) return true;
+  const a = document.activeElement;
+  return !!(a && a.tagName === 'INPUT' && a.closest('#tbl, .stat'));
+}
+async function poll(force) {
+  if (!loaded || (!force && busy())) return;
+  try {
+    const list = await fetchAll();
+    if (busy() && !force) return;
+    if (JSON.stringify(list.map(p => [p.name,p.stock,p.rows])) !== JSON.stringify(products.map(p => [p.name,p.stock,p.rows.map(r=>({...r}))]))) applyServer(list);
+    lastSync = new Date(); setSync();
+  } catch (e) { if (e.message !== 'unauthorized') setSync('同步失敗，稍後重試', true); }
+}
+setInterval(() => poll(), POLL_MS);
+window.addEventListener('focus', () => poll());
+$('#btnRefresh').onclick = () => poll(true);
+
+function setSync(msg, err) {
+  const el = $('#sync'); el.classList.toggle('err', !!err);
+  el.textContent = msg || ('已同步 ' + lastSync.toLocaleTimeString('zh-TW', {hour12:false}));
+}
+
+/* ---------- 儲存（逐列合併，多人不互相覆蓋） ---------- */
+const P = name => (pending[name] ||= {rows:new Set(), del:new Set(), stock:false});
+function queueSave() { setSync('編輯中…'); clearTimeout(saveTimer); saveTimer = setTimeout(() => { saveTimer = null; flush(); }, SAVE_DELAY); }
+async function flush() {
+  if (saving) { queueSave(); return; }
+  saving = true; setSync('儲存中…');
+  try {
+    for (const name of Object.keys(pending)) {
+      const p = pending[name], prod = products.find(x => x.name === name);
+      if (!prod) { delete pending[name]; continue; }
+      const del = [...p.del], ids = [...p.rows], stock = p.stock;
+      p.del.clear(); p.rows.clear(); p.stock = false;
+      try {
+        if (del.length) await api({action:'deleteRows', name, ids:del});
+        const rows = prod.rows.filter(r => ids.includes(r.id));
+        if (rows.length) await api({action:'upsertRows', name, rows});
+        if (stock) await api({action:'setStock', name, stock:prod.stock});
+      } catch (e) { del.forEach(i => p.del.add(i)); ids.forEach(i => p.rows.add(i)); if (stock) p.stock = true; throw e; }
+    }
+    lastSync = new Date(); setSync();
+  } catch (e) {
+    if (e.message !== 'unauthorized') { setSync('⚠ 儲存失敗，5 秒後重試：' + e.message, true); setTimeout(flush, 5000); }
+  } finally { saving = false; }
+}
+window.addEventListener('beforeunload', e => { if (busy() && (saveTimer || Object.values(pending).some(p => p.rows.size || p.del.size || p.stock))) { e.preventDefault(); e.returnValue = ''; } });
+
+/* ---------- 計算 ---------- */
+const cur = () => products.find(p => p.name === active);
+const rowDone = r => r.pickups.reduce((s, p) => s + num(p.qty), 0);
+function totals(p) {
+  const orders = p.rows.reduce((s, r) => s + num(r.qty), 0);
+  const done = p.rows.reduce((s, r) => s + rowDone(r), 0);
+  return {orders, done, left: p.rows.reduce((s, r) => s + num(r.qty) - rowDone(r), 0), real: num(p.stock) - done, free: num(p.stock) - orders};
+}
+const fmt = n => `<span class="${n < 0 ? 'neg' : ''}">${n}</span>`;
+
+/* ---------- 畫面 ---------- */
+function render() {
+  const p = cur();
+  $('#tabs').innerHTML = products.map(x => `<button class="tab ${x.name === active ? 'on' : ''}" data-name="${esc(x.name)}">${esc(x.name)}</button>`).join('') + '<button class="tab add" id="btnAddProd">＋ 新增商品</button>';
+  if (!p) { $('#stats').innerHTML = ''; $('#tbl').innerHTML = ''; return; }
+  const used = Math.max(0, ...p.rows.map(r => r.pickups.reduce((m, k, i) => (k.date || k.qty !== '') ? i + 1 : m, 0)));
+  const n = Math.min(MAX_PICK, Math.max(MIN_PICK, used, showPick[p.name] || 0));
+  showPick[p.name] = n;
+
+  let h = '<thead><tr><th class="cust">客戶</th><th>訂單數量</th>';
+  for (let i = 1; i <= n; i++) h += `<th>第${i}次</th><th>數量</th>`;
+  h += '<th>已取貨</th><th>目前未取</th><th>完成</th><th></th></tr></thead><tbody>';
+  p.rows.forEach(r => {
+    h += `<tr data-id="${r.id}"><td class="cust edit"><input data-f="customer" value="${esc(r.customer)}"></td><td class="q edit"><input type="number" min="0" data-f="qty" value="${esc(r.qty)}"></td>`;
+    for (let i = 0; i < n; i++) h += `<td class="d edit"><input type="date" data-f="date" data-i="${i}" value="${esc(r.pickups[i].date)}"></td><td class="q edit"><input type="number" data-f="pq" data-i="${i}" value="${esc(r.pickups[i].qty)}"></td>`;
+    h += `<td class="calc c-done"></td><td class="calc c-left"></td><td class="ok c-ok"></td><td class="del"><button title="刪除此列" data-del="${r.id}">✕</button></td></tr>`;
+  });
+  h += `</tbody><tfoot><tr><td class="cust">總計</td><td class="f-qty"></td>${'<td></td>'.repeat(n * 2)}<td class="f-done"></td><td class="f-left"></td><td></td><td></td></tr></tfoot>`;
+  $('#tbl').innerHTML = h;
+
+  $('#stats').innerHTML = `
+    <div class="stat"><div class="k">進貨數量（累計）</div><input type="number" id="stockIn" value="${esc(p.stock)}"></div>
+    <div class="stat"><div class="k">訂單總數</div><div class="v" id="s-orders"></div></div>
+    <div class="stat"><div class="k">已取貨</div><div class="v" id="s-done"></div></div>
+    <div class="stat"><div class="k">尚未取貨</div><div class="v" id="s-left"></div></div>
+    <div class="stat"><div class="k">實際庫存</div><div class="v" id="s-real"></div></div>
+    <div class="stat"><div class="k">可再接訂</div><div class="v" id="s-free"></div></div>`;
+  $('#stockIn').oninput = e => { p.stock = e.target.value === '' ? 0 : Number(e.target.value); P(p.name).stock = true; queueSave(); updateCalc(); };
+  $('#btnAddPick').disabled = n >= MAX_PICK;
+  updateCalc(); applySearch();
+}
+function updateCalc() {
+  const p = cur(); if (!p) return;
+  p.rows.forEach(r => {
+    const tr = $(`tr[data-id="${r.id}"]`); if (!tr) return;
+    const done = rowDone(r), left = num(r.qty) - done;
+    tr.querySelector('.c-done').textContent = done;
+    tr.querySelector('.c-left').innerHTML = fmt(left);
+    const ok = num(r.qty) > 0 && left === 0;
+    tr.querySelector('.c-ok').textContent = ok ? '✓' : '';
+    tr.classList.toggle('done', ok);
+  });
+  const t = totals(p);
+  $('#s-orders').textContent = t.orders; $('#s-done').textContent = t.done;
+  $('#s-left').innerHTML = fmt(t.left); $('#s-real').innerHTML = fmt(t.real); $('#s-free').innerHTML = fmt(t.free);
+  $('.f-qty').textContent = t.orders; $('.f-done').textContent = t.done; $('.f-left').innerHTML = fmt(t.left);
+}
+function applySearch() {
+  const q = $('#search').value.trim().toLowerCase(), p = cur(); if (!p) return;
+  p.rows.forEach(r => $(`tr[data-id="${r.id}"]`)?.classList.toggle('hide', !!q && !r.customer.toLowerCase().includes(q)));
+}
+$('#search').oninput = applySearch;
+
+/* ---------- 事件 ---------- */
+$('#tbl').addEventListener('input', e => {
+  const f = e.target.dataset.f; if (!f) return;
+  const p = cur(), id = e.target.closest('tr').dataset.id, r = p.rows.find(x => x.id === id), v = e.target.value;
+  if (f === 'customer') r.customer = v;
+  else if (f === 'qty') r.qty = v === '' ? '' : Number(v);
+  else if (f === 'date') r.pickups[+e.target.dataset.i].date = v;
+  else if (f === 'pq') r.pickups[+e.target.dataset.i].qty = v === '' ? '' : Number(v);
+  P(p.name).rows.add(id); queueSave(); updateCalc();
+  if (f === 'customer') applySearch();
+});
+$('#tbl').addEventListener('click', e => {
+  const id = e.target.dataset.del; if (!id) return;
+  const p = cur(), r = p.rows.find(x => x.id === id);
+  if (!confirm(`確定刪除「${r.customer || '（未命名）'}」這筆訂單？`)) return;
+  p.rows = p.rows.filter(x => x.id !== id);
+  P(p.name).rows.delete(id); P(p.name).del.add(id); queueSave(); render();
+});
+$('#tabs').addEventListener('click', async e => {
+  if (e.target.dataset.name) { active = e.target.dataset.name; render(); }
+  if (e.target.id === 'btnAddProd') {
+    const name = (prompt('新商品名稱：') || '').trim(); if (!name) return;
+    if (products.some(p => p.name === name)) return alert('已有同名商品');
+    try { setSync('建立中…'); await api({action:'createProduct', name, stock:0, rows:[]}); active = name; await poll(true); }
+    catch (err) { alert('建立失敗：' + err.message); setSync(); }
+  }
+});
+$('#btnAddRow').onclick = () => {
+  const p = cur(); if (!p) return;
+  const r = newRow(); p.rows.push(r); P(p.name).rows.add(r.id); queueSave(); render();
+  $(`tr[data-id="${r.id}"] input`).focus(); $('.tablewrap').scrollTop = 1e9;
+};
+$('#btnAddPick').onclick = () => { const p = cur(); showPick[p.name] = Math.min(MAX_PICK, (showPick[p.name] || MIN_PICK) + 1); render(); };
+$('#btnRename').onclick = async () => {
+  const p = cur(); const newName = (prompt('新的商品名稱：', p.name) || '').trim();
+  if (!newName || newName === p.name) return;
+  try { await flush(); await api({action:'renameProduct', name:p.name, newName}); active = newName; await poll(true); } catch (err) { alert('失敗：' + err.message); }
+};
+$('#btnDelProd').onclick = async () => {
+  const p = cur();
+  if (!confirm(`確定刪除商品「${p.name}」與其全部訂單？此動作無法復原。`)) return;
+  if (!confirm('再確認一次：真的要刪除嗎？')) return;
+  try { delete pending[p.name]; await api({action:'deleteProduct', name:p.name}); await poll(true); } catch (err) { alert('失敗：' + err.message); }
+};
+$('#btnCsv').onclick = () => {
+  const p = cur(), n = showPick[p.name] || MIN_PICK;
+  const head = ['客戶','訂單數量']; for (let i = 1; i <= n; i++) head.push('第' + i + '次', '數量'); head.push('已取貨','目前未取');
+  const lines = [head].concat(p.rows.map(r => { const l = [r.customer, r.qty]; for (let i = 0; i < n; i++) l.push(r.pickups[i].date, r.pickups[i].qty); l.push(rowDone(r), num(r.qty) - rowDone(r)); return l; }));
+  const csv = '﻿' + lines.map(l => l.map(c => '"' + String(c ?? '').replace(/"/g, '""') + '"').join(',')).join('\r\n');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8'}));
+  a.download = p.name + '_' + new Date().toISOString().slice(0, 10) + '.csv'; a.click();
+};
+
+/* ---------- 啟動 ---------- */
+if (key) load(true).catch(e => { if (e.message !== 'unauthorized') { setSync('連線失敗：' + e.message, true); } });
+</script>
+</body>
+</html>
